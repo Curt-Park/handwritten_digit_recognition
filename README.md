@@ -1,2 +1,2 @@
-# Handwritten digit recognition with MNIST &amp; Numpy
+# Handwritten digit recognition with MNIST and Keras
 
