@@ -1,8 +1,9 @@
 import numpy as np
-from keras.datasets import mnist
+import matplotlib.pyplot as plt
+from collections import defaultdict
 from keras.utils import np_utils
+from keras.datasets import mnist
 from keras.preprocessing.image import ImageDataGenerator
-
 
 def normalize_images(images):
     '''
@@ -93,3 +94,39 @@ def get_test_generator(x_test, y_test, **kwars):
     Same function as get_val_generator()
     '''
     return get_val_generator(x_test, y_test, **kwars)
+
+def plot(history, path, title = None):
+    '''
+    Plot the trends of loss and metrics during training
+
+    Args:
+        history: History.history attribute. It is a return value of fit method.
+        title: string
+
+    Returns:
+        None
+    '''
+    dhist = defaultdict(lambda: None) # just in case history doesn't have validation info
+    dhist.update(history.history)
+
+    fig, loss_ax = plt.subplots()
+    acc_ax = loss_ax.twinx()
+
+    loss_ax.plot(dhist['loss'], 'y', label='training loss')
+    if dhist['val_loss']:
+        loss_ax.plot(dhist['val_loss'], 'r', label='validation loss')
+
+    acc_ax.plot(dhist['acc'], 'b', label='training acc')
+    if dhist['val_acc']:
+        acc_ax.plot(dhist['val_acc'], 'g', label='validation acc')
+
+    loss_ax.set_xlabel('epoch')
+    loss_ax.set_ylabel('loss')
+    acc_ax.set_ylabel('accuracy')
+
+    loss_ax.legend(loc='upper left')
+    acc_ax.legend(loc='lower left')
+
+    if title:
+        plt.title(title)
+    plt.savefig(path, dpi = fig.dpi)
