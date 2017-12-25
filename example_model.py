@@ -1,5 +1,6 @@
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 from keras.layers import Input, Dense, Flatten
+from keras import optimizers
 from keras.models import Model
 from model import BaseModel
 import utils
@@ -22,7 +23,8 @@ class ExampleModel(BaseModel):
     def __init__(self, path_for_weights):
         callbacks = [ModelCheckpoint(path_for_weights, save_best_only=True),
                      ReduceLROnPlateau(monitor = 'val_loss', factor = 0.2, patience = 5)]
-        BaseModel.__init__(self, self._build(), callbacks)
+        optimizer = optimizers.Adam()
+        BaseModel.__init__(self, model = self._build(), optimizer = optimizer, callbacks = callbacks)
 
     def _build(self):
         x = Input(shape = (28, 28, 1))
