@@ -37,8 +37,8 @@ class VGGLike2(BaseModel):
     '''
     def __init__(self, path_for_weights):
         callbacks = [ModelCheckpoint(path_for_weights, save_best_only=True),
-                     ReduceLROnPlateau(monitor = 'val_loss', factor = 0.2, patience = 5)]
-        optimizer = optimizers.Adam()
+                     ReduceLROnPlateau(monitor = 'val_loss', factor = 0.2, patience = 3)]
+        optimizer = optimizers.SGD(momentum = 0.9, decay = 1e-04)
         BaseModel.__init__(self, model = self._build(), optimizer = optimizer,
                            callbacks = callbacks)
 
@@ -46,7 +46,7 @@ class VGGLike2(BaseModel):
         x = Input(shape = (28, 28, 1))
         y = self._3conv_block(x, out_channel = 32, name = 'block1')
         y = self._3conv_block(y, out_channel = 64, name = 'block2')
-        y = self._3conv_block(y, out_channel = 128, name = 'block2')
+        y = self._3conv_block(y, out_channel = 128, name = 'block3')
         y = self._channel_reduction_conv(y, out_channel = 64, name = 'channel_reduction1')
         y = self._channel_reduction_conv(y, out_channel = 32, name = 'channel_reduction2')
         y = Flatten()(y)
