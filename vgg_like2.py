@@ -1,32 +1,32 @@
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 from keras.layers import (Input, Conv2D, BatchNormalization,
-                          Activation, Dense, Dropout, Flatten)
+                          Activation, Dense, Flatten)
 from keras.models import Model
 from keras import optimizers
 from model import BaseModel
 import utils
 import argparse
 
-MODEL_NAME = 'VGGLike' # This should be modified when the model name changes.
+MODEL_NAME = 'VGGLike2' # This should be modified when the model name changes.
 WEIGHTS_PATH = f'./models/{MODEL_NAME}.h5'
 IMAGE_PATH = f'./images/{MODEL_NAME}.png'
 PLOT_PATH  = f'./images/{MODEL_NAME}_plot.png'
 
-class VGGLike(BaseModel):
+class VGGLike2(BaseModel):
     '''
-    1. 3X3 Conv2D 32 + BN + Relu
-    2. 3X3 Conv2D 32 + BN + Relu
-    3. 3X3 Conv2D 64 with strides (2, 2) + Dropout 0.1
-    4. 3X3 Conv2D 64 + BN + Relu
-    5. 3X3 Conv2D 64 + BN + Relu
-    6. 3X3 Conv2D 128 with strides (2, 2) + Dropout 0.1
-    7. 1X1 Conv2D 64 + BN + Relu
-    8. 1X1 Conv2D 32 + BN + Relu
-    9. 1X1 Conv2D 16 + BN + Relu
-    10. 1X1 Conv2D 8 + BN + Relu
-    11. 1X1 Conv2D 4 + BN + Relu
-    12. FC 64 + BN + Relu + Dropout 0.2
-    13. FC 32 + BN + Relu + Dropout 0.2
+    1. 3X3 Conv2D 16 + BN + Relu
+    2. 3X3 Conv2D 16 + BN + Relu
+    3. 3X3 Conv2D 32 with strides (2, 2)
+    4. 3X3 Conv2D 32 + BN + Relu
+    5. 3X3 Conv2D 32 + BN + Relu
+    6. 3X3 Conv2D 64 with strides (2, 2)
+    7. 3X3 Conv2D 64 + BN + Relu
+    8. 3X3 Conv2D 64 + BN + Relu
+    9. 3X3 Conv2D 128 with strides (2, 2)
+    10. 1X1 Conv2D 64 + BN + Relu
+    11. 1X1 Conv2D 32 + BN + Relu
+    12. FC 256 + Relu
+    13. FC 256 + Relu
     14. FC 10 + Softmax
 
     '_build()' is only modified when the model changes.
@@ -37,24 +37,22 @@ class VGGLike(BaseModel):
     '''
     def __init__(self, path_for_weights):
         callbacks = [ModelCheckpoint(path_for_weights, save_best_only=True),
-                     ReduceLROnPlateau(monitor = 'val_loss', factor = 0.2, patience = 3)]
-        optimizer = optimizers.SGD(lr=0.001, momentum=0.9, decay=1e-06)
+                     ReduceLROnPlateau(monitor = 'val_loss', factor = 0.2, patience = 5)]
+        optimizer = optimizers.Adam()
         BaseModel.__init__(self, model = self._build(), optimizer = optimizer,
                            callbacks = callbacks)
 
     def _build(self):
         x = Input(shape = (28, 28, 1))
-        y = self._3conv_block(x, out_channel = 64, name = 'block1')
+        y = self._3conv_block(x, out_channel = 32, name = 'block1')
+        y = self._3conv_block(y, out_channel = 64, name = 'block2')
         y = self._3conv_block(y, out_channel = 128, name = 'block2')
         y = self._channel_reduction_conv(y, out_channel = 64, name = 'channel_reduction1')
         y = self._channel_reduction_conv(y, out_channel = 32, name = 'channel_reduction2')
-        y = self._channel_reduction_conv(y, out_channel = 16, name = 'channel_reduction3')
-        y = self._channel_reduction_conv(y, out_channel =  8, name = 'channel_reduction4')
-        y = self._channel_reduction_conv(y, out_channel =  4, name = 'channel_reduction5')
         y = Flatten()(y)
-        y = self._dense_bn_relu_dropout(y, out_units = 64, name = 'dense1')
-        y = self._dense_bn_relu_dropout(y, out_units = 32, name = 'dense2')
-        y = Dense(units = 10, activation='softmax', name = 'dense_softmax')(y)
+        y = Dense(units = 256, activation = 'relu', name = 'dense1')(y)
+        y = Dense(units = 256, activation = 'relu', name = 'dense2')(y)
+        y = Dense(units = 10, activation = 'softmax', name = 'dense_softmax')(y)
         return Model(x, y, name = MODEL_NAME)
 
     def _3conv_block(self, x, out_channel, name):
@@ -65,18 +63,11 @@ class VGGLike(BaseModel):
         y = Conv2D(out_channel, (2, 2), strides = (2,2), padding = 'valid',
                                                              name = f'{name}_pooling_conv3')(y)
         y = Activation('relu')(BatchNormalization()(y))
-        y = Dropout(rate = 0.1)(y)
         return y
 
     def _channel_reduction_conv(self, x, out_channel, name):
         y = Conv2D(out_channel, (1, 1), padding = 'same', name = name)(x)
         y = Activation('relu')(BatchNormalization()(y))
-        return y
-
-    def _dense_bn_relu_dropout(self, x, out_units, name):
-        y = Dense(out_units, name = name)(x)
-        y = Activation('relu')(BatchNormalization()(y))
-        y = Dropout(rate = 0.2)(y)
         return y
 
 def get_argument_parser():
@@ -132,7 +123,7 @@ def main():
     print(f'[data loaded]')
 
     # build and compile the model
-    model = VGGLike(args.path_for_weights)
+    model = VGGLike2(args.path_for_weights)
     model.compile()
     print('[model built]')
 

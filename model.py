@@ -2,15 +2,16 @@ from keras.utils import plot_model
 import utils
 
 class BaseModel(object):
-    def __init__(self, model, callbacks = None):
+    def __init__(self, model, optimizer, callbacks = None):
         self.model = model
         self.callbacks = callbacks
+        self.optimizer = optimizer
 
     def load_weights(self, path):
         self.model.load_weights(path)
 
     def compile(self):
-        self.model.compile(optimizer = 'adam', loss = 'categorical_crossentropy',
+        self.model.compile(optimizer = self.optimizer, loss = 'categorical_crossentropy',
                          metrics = ['accuracy'])
 
     def fit(self, training_data, validation_data, epochs, batch_size):
