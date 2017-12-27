@@ -1,6 +1,6 @@
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 from keras.layers import (Input, Conv2D, BatchNormalization, ZeroPadding2D,
-                          AveragePooling2D, Activation, Dense, Flatten, add)
+                          GlobalAveragePooling2D, Activation, Dense, add)
 from keras.models import Model
 from keras import optimizers
 from model import BaseModel
@@ -8,125 +8,108 @@ import utils
 import argparse
 
 MODEL_NAME = 'ResNetLike' # This should be modified when the model name changes.
+DEPTH = 164 # or 1001
 WEIGHTS_PATH = f'./models/{MODEL_NAME}.h5'
 IMAGE_PATH = f'./images/{MODEL_NAME}.png'
 PLOT_PATH  = f'./images/{MODEL_NAME}_plot.png'
 
 class ResNetLike(BaseModel):
     '''
-    1. 3X3 Conv2D 32 + BN + Relu
-    2. 3X3 Conv2D 32 + BN + Relu
-    3. 3X3 Conv2D 64 with strides (2, 2) + Dropout 0.1
-    4. 3X3 Conv2D 64 + BN + Relu
-    5. 3X3 Conv2D 64 + BN + Relu
-    6. 3X3 Conv2D 128 with strides (2, 2) + Dropout 0.1
-    7. 1X1 Conv2D 64 + BN + Relu
-    8. 1X1 Conv2D 32 + BN + Relu
-    9. 1X1 Conv2D 16 + BN + Relu
-    10. 1X1 Conv2D 8 + BN + Relu
-    11. 1X1 Conv2D 4 + BN + Relu
-    12. FC 64 + BN + Relu + Dropout 0.2
-    13. FC 32 + BN + Relu + Dropout 0.2
-    14. FC 10 + Softmax
+    1. ZeroPadding2D (2, 2)
+    2. 3X3 Conv2D 16
+    3. ResidualBlock X 18 + 1
+    4. ResidualBlock X 18 + 1
+    5. ResidualBlock X 18 + 1
+    6. BN + Relu
+    7. GlobalAveragePooling2D
+    8. FC 10 + Softmax
 
     '_build()' is only modified when the model changes.
 
     HowToUse:
-        model = VGGLike(PATH_FOR_WEIGHTS)
+        model = ResNetLike(PATH_FOR_WEIGHTS)
         * all funtionalities are written in BaseModel.py
     '''
     def __init__(self, path_for_weights):
         callbacks = [ModelCheckpoint(path_for_weights, save_best_only=True, verbose = 1),
                      ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1,
-                                       patience = 10, verbose = 1)]
+                                       patience = 5, verbose = 1)]
         optimizer = optimizers.SGD(lr=0.1, momentum=0.9, decay=1e-04)
         BaseModel.__init__(self, model = self._build(), optimizer = optimizer,
                            callbacks = callbacks)
 
     def _build(self):
-        # block_info: list of sets (dimensional_change, layer_num, inner_channel, out_channel)
-        block_info = [(False, 3, 32, 64), (True, 3, 64, 128), (True, 5, 64, 256)]
+        n = (DEPTH - 2) // 9
+        nStages = [16, 64, 128, 256]
 
         x = Input(shape = (28, 28, 1))
-        y = ZeroPadding2D(padding = (2, 2))(x) # matching the size to CIFAR-10
+        y = ZeroPadding2D(padding = (2, 2))(x) # matching the size as CIFAR-10
 
-        y = Conv2D(64, (7, 7), strides = (2,2), padding = 'same', name = '7x7_conv')(y)
+        y = Conv2D(nStages[0], (3, 3), padding = 'same')(y)
+        y = self._layer(y, nStages[1], n, (1, 1)) # spatial size: 32 x 32
+        y = self._layer(y, nStages[2], n, (2, 2)) # spatial size: 16 x 16
+        y = self._layer(y, nStages[3], n, (2, 2)) # spatial size: 8 x 8
         y = BatchNormalization()(y)
         y = Activation('relu')(y)
-
-        # No MaxPooling2D
-
-        i = 1
-        for dimensional_change, layer_num, inner, out in block_info:
-            if dimensional_change:
-                y = self._residual_block_dimensional_change(y, out_channel = out,
-                                                            name = f'block{i}')
-                i += 1
-
-            for j in range(layer_num):
-                y = self._residual_block(y, inner_channel = inner, out_channel = out,
-                                         name = f'block{i}')
-                i += 1
-
-        y = AveragePooling2D(strides = (2, 2))(y)
-
-        y = Flatten()(y)
-        y = Dense(units = 10, activation='softmax', name = 'dense_softmax')(y)
+        y = GlobalAveragePooling2D()(y)
+        y = Dense(units = 10, activation='softmax')(y)
 
         return Model(x, y, name = MODEL_NAME)
 
-    def _residual_block(self, x, inner_channel, out_channel, name):
+    def _layer(self, x, output_channel, count, strides):
         '''
-        - Deep Residual Learning for Image Recognitio (https://arxiv.org/abs/1512.03385)
-          : Bottleneck Architecture
-        - Identity Mappings in Deep Residual Networks (https://arxiv.org/abs/1603.05027)
-          : Full pre-activation
+        Creates a layer which consists of residual blocks as many as 'count'.
         '''
-        fx = BatchNormalization()(x)
-        fx = Activation('relu')(fx)
-        fx = Conv2D(inner_channel, (1, 1), padding = 'same', kernel_initializer = 'he_normal',
-                    name = f'{name}_conv1', )(fx)
+        y = self._residual_block(x, output_channel, True, strides)
 
-        fx = BatchNormalization()(fx)
-        fx = Activation('relu')(fx)
-        fx = Conv2D(inner_channel, (3, 3), padding = 'same', kernel_initializer = 'he_normal',
-                    name = f'{name}_conv2', )(fx)
+        for i in range(1, count):
+            y = self._residual_block(y, output_channel, False, (1, 1))
 
-        fx = BatchNormalization()(fx)
-        fx = Activation('relu')(fx)
-        fx = Conv2D(out_channel, (1, 1), padding = 'same', kernel_initializer = 'he_normal',
-                    name = f'{name}_conv3', )(fx)
+        return y
 
-        hx = x
-
-        return add([hx, fx])
-
-    def _residual_block_dimensional_change(self, x, out_channel, name):
+    def _residual_block(self, x, output_channel, dimensional_increase, strides):
         '''
         It reduces the size of the input with regards to H and W
         and increases the channel number.
 
         - Deep Residual Learning for Image Recognitio (https://arxiv.org/abs/1512.03385)
-          : Projection shorcut (B)
+          : Bottleneck
+          : Projection shortcut (B)
         - Identity Mappings in Deep Residual Networks (https://arxiv.org/abs/1603.05027)
           : Full pre-activation
+          : https://github.com/KaimingHe/resnet-1k-layers/blob/master/resnet-pre-act.lua
         '''
-        # No bottleneck architecture when the dimensionality changes.
+        bottleneck_channel = output_channel // 4
+
+        if dimensional_increase:
+            # common BN, ReLU
+            x = BatchNormalization()(x)
+            x = Activation('relu')(x)
+
+        # conv1x1
         fx = BatchNormalization()(x)
         fx = Activation('relu')(fx)
-        fx = Conv2D(out_channel, (3, 3), padding = 'same', strides = (2, 2),
-                    kernel_initializer = 'he_normal', name = f'{name}_conv1', )(fx)
+        fx = Conv2D(bottleneck_channel, (1, 1), padding = 'same', strides = strides,
+                    kernel_initializer = 'he_normal')(fx)
 
+        # conv3x3
         fx = BatchNormalization()(fx)
         fx = Activation('relu')(fx)
-        fx = Conv2D(out_channel, (3, 3), padding = 'same', kernel_initializer = 'he_normal',
-                    name = f'{name}_conv2', )(fx)
+        fx = Conv2D(bottleneck_channel, (3, 3), padding = 'same',
+                    kernel_initializer = 'he_normal')(fx)
 
-        # Projection shorcut
-        hx = Conv2D(out_channel, (1, 1), strides = (2, 2), kernel_initializer = 'he_normal',
-                    name = f'{name}_projection_shorcut', )(x)
+        # conv1x1
+        fx = BatchNormalization()(fx)
+        fx = Activation('relu')(fx)
+        fx = Conv2D(output_channel, (1, 1), padding = 'same',
+                    kernel_initializer = 'he_normal')(fx)
 
-        return add([hx, fx])
+        if dimensional_increase:
+            # Projection shorcut
+            x = Conv2D(output_channel, (1, 1), padding = 'same', strides = strides,
+                        kernel_initializer = 'he_normal')(x)
+
+        return add([x, fx])
 
 def get_argument_parser():
     '''
@@ -144,7 +127,7 @@ def get_argument_parser():
                         type = int, default = 10)
     parser.add_argument('--batch_size',
                         help = 'The number of images in a batch (default: 32)',
-                        type = int, default = 32)
+                        type = int, default = 64)
     parser.add_argument('--path_for_weights',
                         help = f'The path from where the weights will be saved or loaded \
                                 (default: {WEIGHTS_PATH})',
