@@ -27,7 +27,7 @@ class VGG16(BaseModel):
     '''
     def __init__(self):
         callbacks = [ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1,
-                                       patience = 5, verbose = 1)]
+                                       patience = 10, verbose = 1)]
         optimizer = optimizers.SGD(lr=0.01, momentum=0.9, decay=1e-04)
         BaseModel.__init__(self, model = self._build(), optimizer = optimizer,
                            callbacks = callbacks)
