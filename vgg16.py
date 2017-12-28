@@ -33,6 +33,14 @@ class VGG16(BaseModel):
                            callbacks = callbacks)
 
     def _build(self):
+        '''
+        Builds VGG16. Details written in the paper below.
+        - Very Deep Convolutional Networks for Large-Scale Image Recognition
+          (https://arxiv.org/abs/1409.1556)
+
+        Returns:
+            VGG16 model
+        '''
         x = Input(shape = (28, 28, 1))
         y = ZeroPadding2D(padding = (2, 2))(x) # matching the image size of CIFAR-10
 
@@ -51,8 +59,14 @@ class VGG16(BaseModel):
         return Model(x, y, name = MODEL_NAME)
 
     def _multi_conv_pool(self, x, output_channel, n):
-        # The training is regularized by l2 weight decay(5e-4) in the original paper
-        # BN is used here instead of weight decay
+        '''
+        Builds (Conv2D - BN - Relu) X n - MaxPooling2D
+        The training is regularized by global weight decay (5e-4) in the original paper,
+        but BN is used here instead of weight decay
+
+        Returns:
+            multi conv + max pooling block
+        '''
         y = x
         for _ in range(n):
             y = Conv2D(output_channel, (3, 3), padding = 'same')(y)

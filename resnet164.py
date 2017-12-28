@@ -34,6 +34,19 @@ class ResNet164(BaseModel):
                            callbacks = callbacks)
 
     def _build(self):
+        '''
+        Builds ResNet164.
+        - Deep Residual Learning for Image Recognition (https://arxiv.org/abs/1512.03385)
+          => Bottleneck
+          => Projection shortcut (B)
+        - Identity Mappings in Deep Residual Networks (https://arxiv.org/abs/1603.05027)
+          => Full pre-activation
+        - Author's Implementation
+          => https://github.com/KaimingHe/resnet-1k-layers/blob/master/resnet-pre-act.lua
+
+        Returns:
+            ResNet164 model
+        '''
         n = (DEPTH - 2) // 9
         nStages = [16, 64, 128, 256]
 
@@ -54,6 +67,9 @@ class ResNet164(BaseModel):
     def _layer(self, x, output_channel, count, strides):
         '''
         Creates a layer which consists of residual blocks as many as 'count'.
+
+        Returns:
+            A layer which consists of multiple residual blocks
         '''
         y = self._residual_block(x, output_channel, True, strides)
 
@@ -62,21 +78,16 @@ class ResNet164(BaseModel):
 
         return y
 
-    def _residual_block(self, x, output_channel, change_dimension, strides):
+    def _residual_block(self, x, output_channel, downsampling, strides):
         '''
-        It reduces the size of the input with regards to H and W
-        and increases the channel number.
+        Residual Block: x_{l+1} = x_{l} + F(x_{l}, W_{l})
 
-        - Deep Residual Learning for Image Recognitio (https://arxiv.org/abs/1512.03385)
-          : Bottleneck
-          : Projection shortcut (B)
-        - Identity Mappings in Deep Residual Networks (https://arxiv.org/abs/1603.05027)
-          : Full pre-activation
-          : https://github.com/KaimingHe/resnet-1k-layers/blob/master/resnet-pre-act.lua
+        Returns:
+            a single residual block
         '''
         bottleneck_channel = output_channel // 4
 
-        if change_dimension:
+        if downsampling:
             # common BN, ReLU
             x = BatchNormalization()(x)
             x = Activation('relu')(x)
@@ -102,7 +113,7 @@ class ResNet164(BaseModel):
         fx = Conv2D(output_channel, (1, 1), padding = 'same',
                     kernel_initializer = 'he_normal')(fx)
 
-        if change_dimension:
+        if downsampling:
             # Projection shorcut
             x = Conv2D(output_channel, (1, 1), padding = 'same', strides = strides,
                         kernel_initializer = 'he_normal')(x)
