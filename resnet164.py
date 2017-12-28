@@ -1,17 +1,13 @@
-from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
+from keras.callbacks import ReduceLROnPlateau
 from keras.layers import (Input, Conv2D, BatchNormalization, ZeroPadding2D,
                           GlobalAveragePooling2D, Activation, Dense, add)
 from keras.models import Model
 from keras import optimizers
 from model import BaseModel
-import utils
-import argparse
+from train import train
 
 DEPTH = 164 # or 1001
 MODEL_NAME = f'ResNet{DEPTH}' # This should be modified when the model name changes.
-WEIGHTS_PATH = f'./models/{MODEL_NAME}.h5'
-IMAGE_PATH = f'./images/{MODEL_NAME}.png'
-PLOT_PATH  = f'./images/{MODEL_NAME}_plot.png'
 
 class ResNet164(BaseModel):
     '''
@@ -30,9 +26,8 @@ class ResNet164(BaseModel):
         model = ResNet164(PATH_FOR_WEIGHTS)
         * all funtionalities are written in BaseModel.py
     '''
-    def __init__(self, path_for_weights):
-        callbacks = [ModelCheckpoint(path_for_weights, save_best_only=True, verbose = 1),
-                     ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1,
+    def __init__(self):
+        callbacks = [ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1,
                                        patience = 5, verbose = 1)]
         optimizer = optimizers.SGD(lr=0.1, momentum=0.9, decay=1e-04)
         BaseModel.__init__(self, model = self._build(), optimizer = optimizer,
@@ -43,7 +38,7 @@ class ResNet164(BaseModel):
         nStages = [16, 64, 128, 256]
 
         x = Input(shape = (28, 28, 1))
-        y = ZeroPadding2D(padding = (2, 2))(x) # matching the size as CIFAR-10
+        y = ZeroPadding2D(padding = (2, 2))(x) # matching the image size of CIFAR-10
 
         y = Conv2D(nStages[0], (3, 3), padding = 'same')(y)
         y = self._layer(y, nStages[1], n, (1, 1)) # spatial size: 32 x 32
@@ -62,7 +57,7 @@ class ResNet164(BaseModel):
         '''
         y = self._residual_block(x, output_channel, True, strides)
 
-        for i in range(1, count):
+        for _ in range(1, count):
             y = self._residual_block(y, output_channel, False, (1, 1))
 
         return y
@@ -114,92 +109,12 @@ class ResNet164(BaseModel):
 
         return add([x, fx])
 
-def get_argument_parser():
-    '''
-    Argument parser which returns the options which the user inputted.
-
-    Args:
-        None
-
-    Returns:
-        argparse.ArgumentParser().parse_args()
-    '''
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs',
-                        help = 'How many epochs you need to run (default: 10)',
-                        type = int, default = 10)
-    parser.add_argument('--batch_size',
-                        help = 'The number of images in a batch (default: 32)',
-                        type = int, default = 64)
-    parser.add_argument('--path_for_weights',
-                        help = f'The path from where the weights will be saved or loaded \
-                                (default: {WEIGHTS_PATH})',
-                        type = str, default = WEIGHTS_PATH)
-    parser.add_argument('--path_for_image',
-                        help = f'The path from where the model image will be saved \
-                                (default: {IMAGE_PATH})',
-                        type = str, default = IMAGE_PATH)
-    parser.add_argument('--path_for_plot',
-                        help = f'The path from where the training progress will be plotted \
-                                (default: {PLOT_PATH})',
-                        type = str, default = PLOT_PATH)
-    parser.add_argument('--data_augmentation',
-                        help = '0: No, 1: Yes (default: 1)',
-                        type = int, default = 1)
-    parser.add_argument('--load_weights',
-                        help = '0: No, 1: Yes (default: 0)',
-                        type = int, default = 0)
-    parser.add_argument('--plot_training_progress',
-                        help = '0: No, 1: Yes (default: 1)',
-                        type = int, default = 1)
-    parser.add_argument('--save_model_to_image',
-                        help = '0: No, 1: Yes (default: 1)',
-                        type = int, default = 1)
-    args = parser.parse_args()
-
-    return args
-
 def main():
-    # load all arguments
-    args = get_argument_parser()
-
-    training_data, validation_data, test_data = utils.load_mnist()
-    print(f'[data loaded]')
-
-    # build and compile the model
-    model = ResNet164(args.path_for_weights)
-    model.compile()
-    print('[model built]')
-
-    # save the model architecture to an image file
-    if args.save_model_to_image:
-        model.save_model_as_image(args.path_for_image)
-        print(f'[model image saved as {args.path_for_image}]')
-
-    # load pretrained weights
-    if args.load_weights:
-        model.load_weights(args.path_for_weights)
-        print(f'[weights loaded from {args.path_for_weights}]')
-
-    # train the model
-    hist = None
-    if args.data_augmentation:
-        hist = model.fit_generator(training_data, validation_data,
-                                   epochs = args.epochs, batch_size = args.batch_size)
-        print('[trained with augmented images]')
-    else:
-        hist = model.fit(training_data, validation_data,
-                            epochs = args.epochs, batch_size = args.batch_size)
-        print('[trained without augmented images]')
-
-    # save the training progress to an image file
-    if args.plot_training_progress:
-        utils.plot(history = hist, path = args.path_for_plot, title = MODEL_NAME)
-        print(f'training progress saved as {args.path_for_plot}')
-
-    # evaluate the model with the test dataset
-    loss_and_metrics = model.evaluate(test_data, batch_size = args.batch_size)
-    print('Evaluation on the test dataset\n', loss_and_metrics, '\n')
+    '''
+    Train the model defined above.
+    '''
+    model = ResNet164()
+    train(model, MODEL_NAME)
 
 if __name__ == '__main__':
     main()

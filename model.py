@@ -10,6 +10,9 @@ class BaseModel(object):
     def load_weights(self, path):
         self.model.load_weights(path)
 
+    def save(self, path):
+        self.model.save(path)
+
     def compile(self):
         self.model.compile(optimizer = self.optimizer, loss = 'categorical_crossentropy',
                          metrics = ['accuracy'])
