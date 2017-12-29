@@ -1,4 +1,3 @@
 *.gz
 *.pyc
 __pycache__/
-models/
