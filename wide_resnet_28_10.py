@@ -49,7 +49,7 @@ class WideResNet(BaseModel):
 
         callbacks = [ReduceLROnPlateau(monitor = 'val_loss', factor = 0.2,
                                        patience = 10, verbose = 1)]
-                     #LearningRateScheduler(lr_schedule, verbose = 1)]
+                     #LearningRateScheduler(lr_schedule)]
 
         # PAPER: 1. no decay in the paper.
         #        2. nesterov is used for experiments in the paper
