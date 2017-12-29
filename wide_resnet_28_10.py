@@ -46,14 +46,14 @@ class WideResNet(BaseModel):
 
             return initial_lrate * drop_rate
         '''
-
+        # HERE: Drops learning rate whenever validation loss has plateaued.
         callbacks = [ReduceLROnPlateau(monitor = 'val_loss', factor = 0.2,
                                        patience = 10, verbose = 1)]
                      #LearningRateScheduler(lr_schedule)]
 
         # PAPER: 1. no decay in the paper.
-        #        2. nesterov is used for experiments in the paper
-        # AUTHOR'S IMPLEMENTATION: nesterov is False in the implementation.
+        #        2. nesterov is used for experiments in the paper.
+        # AUTHOR'S IMPLEMENTATION: nesterov is False.
         # HERE: 1. Learning rate decay: 1e-04
         #       2. nesterov = True
         self.regularizer = regularizers.l2(5e-04)
