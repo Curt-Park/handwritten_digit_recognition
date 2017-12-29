@@ -1,4 +1,4 @@
-from keras.callbacks import ReduceLROnPlateau
+from keras.callbacks import ReduceLROnPlateau#, LearningRateScheduler
 from keras.layers import (Input, Conv2D, BatchNormalization, ZeroPadding2D, Dropout,
                           GlobalAveragePooling2D, Activation, Dense, add)
 from keras.models import Model
@@ -31,9 +31,25 @@ class WideResNet(BaseModel):
     '''
     def __init__(self):
         # PAPER: Learning rate drops by 0.2 at 60, 120 and 160 epochs. (total 200 epochs)
-        # HERE: Learning rate drops by 0.2 whenever the validation loss has plateaued.
+        '''
+        def lr_schedule(epoch):
+            initial_lrate = 0.1
+            drop_step = 0.2
+            drop_rate = 1
+            drop_at = [60, 120, 160]
+
+            for e in drop_at:
+                if e <= epoch:
+                    drop_rate *= drop_step
+                else:
+                    break
+
+            return initial_lrate * drop_rate
+        '''
+
         callbacks = [ReduceLROnPlateau(monitor = 'val_loss', factor = 0.2,
                                        patience = 10, verbose = 1)]
+                     #LearningRateScheduler(lr_schedule, verbose = 1)]
 
         # PAPER: 1. no decay in the paper.
         #        2. nesterov is used for experiments in the paper
