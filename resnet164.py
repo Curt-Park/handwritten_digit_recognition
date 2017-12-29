@@ -23,7 +23,7 @@ class ResNet164(BaseModel):
     '_build()' is only modified when the model changes.
 
     HowToUse:
-        model = ResNet164(PATH_FOR_WEIGHTS)
+        model = ResNet164()
         * all funtionalities are written in BaseModel.py
     '''
     def __init__(self):

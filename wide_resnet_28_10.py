@@ -26,7 +26,7 @@ class WideResNet(BaseModel):
     '_build()' is only modified when the model changes.
 
     HowToUse:
-        model = WideResNet(PATH_FOR_WEIGHTS)
+        model = WideResNet()
         * all funtionalities are written in BaseModel.py
     '''
     def __init__(self):

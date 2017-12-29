@@ -22,7 +22,7 @@ class VGG16(BaseModel):
     '_build()' is only modified when the model changes.
 
     HowToUse:
-        model = VGG16(PATH_FOR_WEIGHTS)
+        model = VGG16()
         * all funtionalities are written in BaseModel.py
     '''
     def __init__(self):
