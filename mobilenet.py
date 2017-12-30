@@ -30,8 +30,8 @@ class MobileNet(BaseModel):
           => https://github.com/Zehaos/MobileNet/issues/13
         '''
         callbacks = [ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1,
-                                       patience = 10, verbose = 1)]
-        optimizer = optimizers.RMSprop(lr = 0.1)
+                                       patience = 30, verbose = 1)]
+        optimizer = optimizers.RMSprop(lr = 0.01)
         BaseModel.__init__(self, model = self._build(), optimizer = optimizer,
                            callbacks = callbacks)
 
