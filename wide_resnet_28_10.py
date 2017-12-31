@@ -10,9 +10,9 @@ from train import train
 DEPTH = 28
 WIDEN_FACTOR = 10
 DROPOUT = 0.3
-MODEL_NAME = f'WIDE_RESNET_{DEPTH}_{WIDEN_FACTOR}' # This should be modified when the model name changes.
+MODEL_NAME = 'WideResNet28_10' # This should be modified when the model name changes.
 
-class WideResNet(BaseModel):
+class WideResNet28_10(BaseModel):
     '''
     1. ZeroPadding2D (2, 2)
     2. 3X3 Conv2D 16
@@ -26,7 +26,7 @@ class WideResNet(BaseModel):
     '_build()' is only modified when the model changes.
 
     HowToUse:
-        model = WideResNet()
+        model = WideResNet28_10()
         * all funtionalities are written in BaseModel.py
     '''
     def __init__(self):
@@ -173,7 +173,7 @@ def main():
     '''
     Train the model defined above.
     '''
-    model = WideResNet()
+    model = WideResNet28_10()
     train(model, MODEL_NAME)
 
 if __name__ == '__main__':

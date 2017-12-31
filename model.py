@@ -47,5 +47,8 @@ class BaseModel(object):
                                                batch_size = batch_size)
         return loss_and_metrics
 
+    def predict(self, x, batch_size = None, verbose = 1, steps = None):
+        return self.model.predict(x, batch_size, verbose, steps)
+
     def save_model_as_image(self, path):
         plot_model(self.model, to_file = path, show_shapes = True)
