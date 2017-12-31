@@ -9,12 +9,6 @@ import os
 
 PATH = './models/'
 models = [VGG16(), ResNet164(), WideResNet28_10(), MobileNet()]
-# models = [ResNet164(), WideResNet28_10()]
-# models = [VGG16(), WideResNet28_10(), MobileNet()]
-# models = [VGG16(), ResNet164(), MobileNet()]
-# models = [VGG16(), ResNet164(), WideResNet28_10()] # 99.77% by majority
-# models = [ResNet164(), WideResNet28_10(), MobileNet()] # Achieved 99.78% by Average Ensemble
-# models = [VGG16(), MobileNet()]
 
 def evaluate(prediction, true_label):
     '''
@@ -35,8 +29,6 @@ def evaluate(prediction, true_label):
 def unweighted_average_ensemble(predictions):
     '''
     Averge predictions of all models
-    The following group acheives 99.78 % on test set.
-    models = [ResNet164(), WideResNet28_10(), MobileNet()]
 
     Args:
         predictions - List of 2-D numpy arrays
@@ -50,9 +42,6 @@ def unweighted_average_ensemble(predictions):
 def majority_voting_ensemble(predictions):
     '''
     prediction by mojority voting
-    The following groups acheiev 99.77 % on test set
-    models = [VGG16(), ResNet164(), WideResNet28_10()]
-    models = [ResNet164(), WideResNet28_10(), MobileNet()]
 
     Args:
         predictions - List of 2-D numpy arrays
