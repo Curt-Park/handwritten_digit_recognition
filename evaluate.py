@@ -4,6 +4,7 @@ from vgg16 import VGG16
 from resnet164 import ResNet164
 from mobilenet import MobileNet
 from wide_resnet_28_10 import WideResNet28_10
+from super_learner import SuperLearner
 import argparse
 import numpy as np
 import os
@@ -75,6 +76,11 @@ def majority_voting_ensemble(predictions):
 
     return np.sum(np.asarray(one_hot_predictions), 0)
 
+def super_learning(models, x):
+    super_learner = SuperLearner(models)
+    super_learner.load_weights(PATH + 'SuperLearner.h5')
+    return super_learner.predict(x)
+
 def main():
     args = get_argument_parser()
     (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_mnist()
@@ -125,6 +131,9 @@ def main():
 
     ensemble_accuracy = evaluate(majority_voting_ensemble(predictions), y)
     print('Accuracy by Majority Voting Ensemble: ', ensemble_accuracy * 100, '%')
+
+    ensemble_accuracy = evaluate(super_learning(models, x), y)
+    print('Accuracy by Super Learning: ', ensemble_accuracy * 100, '%')
 
 if __name__ == '__main__':
     main()
