@@ -5,6 +5,7 @@ from resnet164 import ResNet164
 from mobilenet import MobileNet
 from wide_resnet_28_10 import WideResNet28_10
 from super_learner import SuperLearner
+from super_learner_extension import SuperLearnerExtension
 import argparse
 import numpy as np
 import os
@@ -81,6 +82,11 @@ def super_learning(models, x):
     super_learner.load_weights(PATH + 'SuperLearner.h5')
     return super_learner.predict(x)
 
+def super_learning_extension(models, x):
+    super_learner_extension = SuperLearnerExtension(models)
+    super_learner_extension.load_weights(PATH + 'SuperLearnerExtension.h5')
+    return super_learner_extension.predict(x)
+
 def main():
     args = get_argument_parser()
     (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_mnist()
@@ -134,6 +140,9 @@ def main():
 
     ensemble_accuracy = evaluate(super_learning(models, x), y)
     print('Accuracy by Super Learning: ', ensemble_accuracy * 100, '%')
+
+    ensemble_accuracy = evaluate(super_learning_extension(models, x), y)
+    print('Accuracy by Super Learning Extension: ', ensemble_accuracy * 100, '%')
 
 if __name__ == '__main__':
     main()

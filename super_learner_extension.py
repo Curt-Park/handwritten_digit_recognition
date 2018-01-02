@@ -1,5 +1,6 @@
 from keras.callbacks import ReduceLROnPlateau
 from keras.layers import (Input, Conv1D, Activation, Flatten)
+from keras.layers.advanced_activations import PReLU
 from keras.models import Model
 from keras.initializers import Constant
 from keras import optimizers
@@ -12,11 +13,11 @@ import numpy as np
 import argparse
 import utils
 
-MODEL_NAME = 'SuperLearner' # This should be modified when the model name changes.
+MODEL_NAME = 'SuperLearnerExtension' # This should be modified when the model name changes.
 PATH = './models/'
 models = [VGG16(), ResNet164(), WideResNet28_10(), MobileNet()]
 
-class SuperLearner(BaseModel):
+class SuperLearnerExtension(BaseModel):
     '''
     1. Conv1D (N, 10, NumOfModelsToBeEnsembled)
     2. Softmax
@@ -39,23 +40,34 @@ class SuperLearner(BaseModel):
 
     def _build(self):
         '''
-        Builds SuperLearner. Details written in the paper below.
+        Builds SuperLearnerExtension.
+        "The structure is simple and could be easily extended. One potential extension
+        of the linear-weighted Super Learner would be stacking several 1 × 1 convolutions
+        with non-linear activation layers in between."
+
+        From:
             - The Relative Performance of Ensemble Methods with Deep Convolutional
             Neural Networks for Image Classification (https://arxiv.org/abs/1704.01664)
-            - Super Learner (http://biostats.bepress.com/ucbbiostat/paper222/)
 
         Returns:
             Probabilities for each label by weighted sum of all models' scores
         '''
-        # Same as Unweighted Average Method at the begining
-        init = Constant(value = 1/len(self.models))
-
         x = Input(shape = (10, len(self.models)))
-        y = Conv1D(1, 1, kernel_initializer = init)(x)
+        y = self._conv1d_prelu(x, 32)
+        y = self._conv1d_prelu(x, 32)
+        y = self._conv1d_prelu(x, 64)
+        y = self._conv1d_prelu(x, 64)
+        y = Conv1D(1, 1)(x)
         y = Flatten()(y)
         y = Activation('softmax')(y)
 
         return Model(x, y, name = MODEL_NAME)
+
+    def _conv1d_prelu(self, x, out_filters):
+        y = Conv1D(out_filters, 1)(x)
+        y = PReLU()(y)
+        return y
+
 
     def _remove_softmax_from(self, models):
         '''
@@ -191,7 +203,7 @@ def main():
 
         print('Loading pretrained weights for ', model_name, '...', sep='')
         model.load_weights(PATH + model_name + '.h5')
-    super_learner = SuperLearner(models)
+    super_learner = SuperLearnerExtension(models)
     super_learner.compile()
 
     # load pretrained weights
