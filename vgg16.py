@@ -54,7 +54,8 @@ class VGG16(BaseModel):
         y = Dropout(0.5)(y)
         y = Dense(units = 256, activation='relu')(y)
         y = Dropout(0.5)(y)
-        y = Dense(units = 10, activation='softmax')(y)
+        y = Dense(units = 10)(y)
+        y = Activation('softmax')(y)
 
         return Model(x, y, name = MODEL_NAME)
 

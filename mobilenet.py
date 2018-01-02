@@ -68,7 +68,8 @@ class MobileNet(BaseModel):
         y = self._densewise_sep_conv(y, 1024, alpha, strides = (2, 2)) # spatial size: 2 x 2
         y = self._densewise_sep_conv(y, 1024, alpha) # strides = (2, 2) in the paper
         y = GlobalAveragePooling2D()(y)
-        y = Dense(units = 10, activation='softmax')(y)
+        y = Dense(units = 10)(y)
+        y = Activation('softmax')(y)
 
         return Model(x, y, name = MODEL_NAME)
 

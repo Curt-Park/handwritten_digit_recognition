@@ -100,9 +100,10 @@ class WideResNet28_10(BaseModel):
                                gamma_regularizer = self.regularizer)(y)
         y = Activation('relu')(y)
         y = GlobalAveragePooling2D()(y)
-        y = Dense(units = 10, activation='softmax',
+        y = Dense(units = 10,
                   kernel_regularizer = self.regularizer,
                   bias_regularizer = self.regularizer)(y)
+        y = Activation('softmax')(y)
 
         return Model(x, y, name = MODEL_NAME)
 

@@ -60,7 +60,8 @@ class ResNet164(BaseModel):
         y = BatchNormalization()(y)
         y = Activation('relu')(y)
         y = GlobalAveragePooling2D()(y)
-        y = Dense(units = 10, activation='softmax')(y)
+        y = Dense(units = 10)(y)
+        y = Activation('softmax')(y)
 
         return Model(x, y, name = MODEL_NAME)
 
