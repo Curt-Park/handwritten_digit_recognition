@@ -8,8 +8,8 @@ from vgg16 import VGG16
 from resnet164 import ResNet164
 from mobilenet import MobileNet
 from wide_resnet_28_10 import WideResNet28_10
-from train import train
 import numpy as np
+import argparse
 import utils
 
 MODEL_NAME = 'SuperLearner' # This should be modified when the model name changes.
@@ -34,6 +34,9 @@ class SuperLearner(BaseModel):
         optimizer = optimizers.SGD(lr=0.01, momentum=0.9, decay=1e-04)
         BaseModel.__init__(self, model = self._build(), optimizer = optimizer,
                            callbacks = callbacks)
+        self.x_train = None
+        self.x_val = None
+        self.x_test = None
 
     def _build(self):
         '''
@@ -91,47 +94,83 @@ class SuperLearner(BaseModel):
         return np.asarray(scores).transpose((1, 2, 0))
 
     def fit(self, training_data, validation_data, epochs, batch_size):
-        x_train, y_train = training_data
-        x_val, y_val = validation_data
+        x_val, y_val = training_data
+        x_test, y_test = validation_data
 
-        # the following 2 lines are different from BaseModel's function
-        x_train = self._get_scores(x_train)
-        x_val = self._get_scores(x_val)
+        # in order to save time
+        if not self.x_val:
+            self.x_val = self._get_scores(x_val)
+        if not self.x_test:
+            self.x_test = self._get_scores(x_test)
 
-        hist = self.model.fit(x_train, y_train, epochs = epochs,
+        hist = self.model.fit(self.x_val, self.y_val, epochs = epochs,
                               batch_size = batch_size,
-                              validation_data = (x_val, y_val), callbacks = self.callbacks)
+                              validation_data = (self.x_test, self.y_test),
+                              callbacks = self.callbacks)
         return hist
 
-    def fit_generator(self, training_data, validation_data, epochs, batch_size):
-        x_train, y_train = training_data
-        x_val, y_val = validation_data
+    def evaluate(self, eval_data, batch_size = 32):
+        x_test, y_test = eval_data
 
-        # the following 2 lines are different from BaseModel's function
-        x_train = self._get_scores(x_train)
-        x_val = self._get_scores(x_val)
+        # in order to save time
+        if not self.x_test:
+            self.x_test = self._get_scores(x_test)
 
-        train_datagen = utils.get_train_generator(x_train, y_train,
-                                                  batch_size = batch_size)
-        val_datagen = utils.get_val_generator(x_val, y_val,
-                                              batch_size = batch_size)
-        hist = self.model.fit_generator(train_datagen,
-                                        callbacks = self.callbacks,
-                                        steps_per_epoch = x_train.shape[0] // batch_size,
-                                        epochs = epochs, validation_data = val_datagen,
-                                        validation_steps = x_val.shape[0] // batch_size)
-        return hist
+        loss_and_metrics = self.model.evaluate(self.x_test, y_test,
+                                               batch_size = batch_size)
+        return loss_and_metrics
 
     def predict(self, x, batch_size = None, verbose = 1, steps = None):
-        # the following line is different from BaseModel's function
         x = self._get_scores(x)
 
         return self.model.predict(x, batch_size, verbose, steps)
+
+def get_argument_parser(model_name):
+    '''
+    Argument parser which returns the options which the user inputted.
+
+    Args:
+        None
+
+    Returns:
+        argparse.ArgumentParser().parse_args()
+    '''
+    weights_path = f'./models/{model_name}.h5'
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--epochs',
+                        help = 'How many epochs you need to run (default: 10)',
+                        type = int, default = 10)
+    parser.add_argument('--batch_size',
+                        help = 'The number of images in a batch (default: 64)',
+                        type = int, default = 64)
+    parser.add_argument('--path_for_weights',
+                        help = f'The path from where the weights will be saved or loaded \
+                                (default: {weights_path})',
+                        type = str, default = weights_path)
+    parser.add_argument('--save_model_and_weights',
+                        help = '0: No, 1: Yes (default: 1)',
+                        type = int, default = 1)
+    parser.add_argument('--load_weights',
+                        help = '0: No, 1: Yes (default: 0)',
+                        type = int, default = 0)
+    args = parser.parse_args()
+
+    return args
 
 def main():
     '''
     Train the model defined above.
     '''
+    # load all arguments
+    args = get_argument_parser(MODEL_NAME)
+
+    model = SuperLearner(models)
+
+    _, validation_data, test_data = utils.load_mnist()
+    print(f'[data loaded]')
+
+    # build and compile the model
     for model in models:
         model_name = type(model).__name__
         model.compile()
@@ -139,8 +178,24 @@ def main():
         print('Loading pretrained weights for ', model_name, '...', sep='')
         model.load_weights(PATH + model_name + '.h5')
 
-    model = SuperLearner(models)
-    train(model, MODEL_NAME)
+    # load pretrained weights
+    if args.load_weights:
+        model.load_weights(args.path_for_weights)
+        print(f'[weights loaded from {args.path_for_weights}]')
+
+    # train the model
+    model.fit(validation_data, test_data,
+               epochs = args.epochs, batch_size = args.batch_size)
+    print('[trained on the validation set]')
+
+    # save the model and trained weights in the configured path
+    if args.save_model_and_weights:
+        model.save(args.path_for_weights)
+        print(f'[Model and trained weights saved in {args.path_for_weights}]')
+
+    # evaluate the model with the test dataset
+    loss_and_metrics = model.evaluate(test_data, batch_size = args.batch_size)
+    print('[Evaluation on the test dataset]\n', loss_and_metrics, '\n')
 
 if __name__ == '__main__':
     main()

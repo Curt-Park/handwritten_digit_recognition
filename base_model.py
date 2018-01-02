@@ -41,9 +41,9 @@ class BaseModel(object):
                                         validation_steps = x_val.shape[0] // batch_size)
         return hist
 
-    def evaluate(self, test_data, batch_size):
-        x_test, y_test = test_data
-        loss_and_metrics = self.model.evaluate(x_test, y_test,
+    def evaluate(self, eval_data, batch_size = 32):
+        x, y = eval_data
+        loss_and_metrics = self.model.evaluate(x, y,
                                                batch_size = batch_size)
         return loss_and_metrics
 
