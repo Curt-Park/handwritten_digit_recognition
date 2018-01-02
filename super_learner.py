@@ -94,6 +94,22 @@ class SuperLearner(BaseModel):
         return np.asarray(scores).transpose((1, 2, 0))
 
     def fit(self, training_data, validation_data, epochs, batch_size):
+        '''
+        Training on the validation set. -
+
+        "Super Learner from convolution neural network perspective.
+        The base learners are trained in the training set,
+        and 1 by 1 convolutional layer is trained in the validation set."
+
+        "We compute the weights of Super Learner by minimizing the single-split
+        cross-validated loss."
+
+        "The Super Learner computes an honest ensemble weight based on the validation set."
+
+        From:
+            - The Relative Performance of Ensemble Methods with Deep Convolutional
+            Neural Networks for Image Classification (https://arxiv.org/abs/1704.01664)
+        '''
         x_val, y_val = training_data
         x_test, y_test = validation_data
 
@@ -103,9 +119,9 @@ class SuperLearner(BaseModel):
         if not self.x_test:
             self.x_test = self._get_scores(x_test)
 
-        hist = self.model.fit(self.x_val, self.y_val, epochs = epochs,
+        hist = self.model.fit(self.x_val, y_val, epochs = epochs,
                               batch_size = batch_size,
-                              validation_data = (self.x_test, self.y_test),
+                              validation_data = (self.x_test, y_test),
                               callbacks = self.callbacks)
         return hist
 
@@ -175,8 +191,8 @@ def main():
 
         print('Loading pretrained weights for ', model_name, '...', sep='')
         model.load_weights(PATH + model_name + '.h5')
-
     super_learner = SuperLearner(models)
+    super_learner.compile()
 
     # load pretrained weights
     if args.load_weights:
