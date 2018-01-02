@@ -4,7 +4,7 @@ from keras.layers import (Input, Conv2D, BatchNormalization, ZeroPadding2D, Drop
 from keras.models import Model
 from keras import optimizers
 from keras import regularizers
-from model import BaseModel
+from base_model import BaseModel
 from train import train
 
 DEPTH = 28

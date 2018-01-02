@@ -4,7 +4,7 @@ from keras.layers import (Input, Conv2D, BatchNormalization, ZeroPadding2D,
                           GlobalAveragePooling2D, Activation, Dense)
 from keras.models import Model
 from keras import optimizers
-from model import BaseModel
+from base_model import BaseModel
 from train import train
 
 ALPHA = 1

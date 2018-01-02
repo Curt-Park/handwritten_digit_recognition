@@ -3,7 +3,7 @@ from keras.layers import (Input, Conv2D, BatchNormalization, ZeroPadding2D,
                           MaxPooling2D, Activation, Dense, Dropout, Flatten)
 from keras.models import Model
 from keras import optimizers
-from model import BaseModel
+from base_model import BaseModel
 from train import train
 
 MODEL_NAME = 'VGG16' # This should be modified when the model name changes.

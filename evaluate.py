@@ -56,7 +56,7 @@ def majority_voting_ensemble(predictions):
     return np.sum(np.asarray(one_hot_predictions), 0)
 
 def main():
-    _, _, (x_test, y_test) = load_mnist()
+    _, (x_val, y_val), _ = load_mnist()
 
     predictions = []
     for model in models:
@@ -67,25 +67,26 @@ def main():
         model.load_weights(PATH + model_name + '.h5')
 
         # In order to save time, stored prediction results can be used.
-        prediction_path = './predictions/' + model_name + '_test.npy'
+        prediction_path = './predictions/' + model_name + '_val.npy'
         if os.path.isfile(prediction_path):
             single_model_prediction = np.load(prediction_path)
             print('Prediction file loaded')
         else:
             print('No prediction file. Predicting...')
-            single_model_prediction = model.predict(x_test, verbose = 1)
+            single_model_prediction = model.predict(x_val, verbose = 1)
+            print(single_model_prediction[0])
             np.save(prediction_path, single_model_prediction)
             print('Saved prediction file in', prediction_path)
 
         predictions.append(single_model_prediction)
-        single_model_accuracy = evaluate(single_model_prediction, y_test)
+        single_model_accuracy = evaluate(single_model_prediction, y_val)
         print(f'Evaluation of {model_name}:', single_model_accuracy * 100, '%')
         print()
 
-    ensemble_accuracy = evaluate(unweighted_average_ensemble(predictions), y_test)
+    ensemble_accuracy = evaluate(unweighted_average_ensemble(predictions), y_val)
     print('Accuracy by Unweighted Average Ensemble: ', ensemble_accuracy * 100, '%')
 
-    ensemble_accuracy = evaluate(majority_voting_ensemble(predictions), y_test)
+    ensemble_accuracy = evaluate(majority_voting_ensemble(predictions), y_val)
     print('Accuracy by Majority Voting Ensemble: ', ensemble_accuracy * 100, '%')
 
 if __name__ == '__main__':
