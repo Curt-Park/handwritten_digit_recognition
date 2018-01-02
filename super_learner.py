@@ -165,8 +165,6 @@ def main():
     # load all arguments
     args = get_argument_parser(MODEL_NAME)
 
-    model = SuperLearner(models)
-
     _, validation_data, test_data = utils.load_mnist()
     print(f'[data loaded]')
 
@@ -178,23 +176,25 @@ def main():
         print('Loading pretrained weights for ', model_name, '...', sep='')
         model.load_weights(PATH + model_name + '.h5')
 
+    super_learner = SuperLearner(models)
+
     # load pretrained weights
     if args.load_weights:
-        model.load_weights(args.path_for_weights)
+        super_learner.load_weights(args.path_for_weights)
         print(f'[weights loaded from {args.path_for_weights}]')
 
     # train the model
-    model.fit(validation_data, test_data,
-               epochs = args.epochs, batch_size = args.batch_size)
+    super_learner.fit(validation_data, test_data,
+                      epochs = args.epochs, batch_size = args.batch_size)
     print('[trained on the validation set]')
 
     # save the model and trained weights in the configured path
     if args.save_model_and_weights:
-        model.save(args.path_for_weights)
+        super_learner.save(args.path_for_weights)
         print(f'[Model and trained weights saved in {args.path_for_weights}]')
 
     # evaluate the model with the test dataset
-    loss_and_metrics = model.evaluate(test_data, batch_size = args.batch_size)
+    loss_and_metrics = super_learner.evaluate(test_data, batch_size = args.batch_size)
     print('[Evaluation on the test dataset]\n', loss_and_metrics, '\n')
 
 if __name__ == '__main__':
