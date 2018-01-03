@@ -1,7 +1,6 @@
 from keras.callbacks import ReduceLROnPlateau
 from keras.layers import (Input, Conv1D, Activation, Flatten)
 from keras.models import Model
-from keras.initializers import Constant
 from keras import regularizers
 from keras import optimizers
 from base_model import BaseModel
@@ -31,10 +30,10 @@ class SuperLearner(BaseModel):
     '''
     def __init__(self, models):
         self.models = self._remove_softmax_from(models)
-        callbacks = [ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1,
-                                       patience = 20, verbose = 1)]
-        # optimizer = optimizers.SGD(lr=0.01, momentum=0.9, decay=1e-04)
-        optimizer = optimizers.Adam()
+        # Don't use test data information for training
+        callbacks = [ReduceLROnPlateau(monitor = 'loss', factor = 1/2,
+                                       patience = 50, verbose = 1)]
+        optimizer = optimizers.RMSprop() #optimizers.SGD(lr=1, momentum=0.9, decay=1e-04)
         BaseModel.__init__(self, model = self._build(), optimizer = optimizer,
                            callbacks = callbacks)
 
@@ -48,7 +47,7 @@ class SuperLearner(BaseModel):
         Returns:
             Probabilities for each label by weighted sum of all models' scores
         '''
-        reg = regularizers.l1(0.001)
+        reg = regularizers.l1(0.0001)
         x = Input(shape = (10, len(self.models)))
         y = Conv1D(1, 1, kernel_regularizer = reg, bias_regularizer = reg)(x)
         y = Flatten()(y)
@@ -171,7 +170,7 @@ def main():
     score_path_test = './predictions/' + MODEL_NAME + '_score_test.npy'
 
     if os.path.isfile(score_path_val):
-        validation_data = (np.load(score_path_val), y_val) 
+        validation_data = (np.load(score_path_val), y_val)
         print('[Score file loaded for the validation set]')
     else:
         print('[No score file for the validation Set]')
@@ -181,7 +180,7 @@ def main():
 
     if os.path.isfile(score_path_test):
         print('[Score file loaded for the test set]')
-        test_data = (np.load(score_path_test), y_test) 
+        test_data = (np.load(score_path_test), y_test)
     else:
         print('[No score file for the test Set]')
         test_data = (super_learner.get_scores(x_test), y_test)
