@@ -28,7 +28,7 @@ class SuperLearner(BaseModel):
         * all funtionalities are written in BaseModel.py
     '''
     def __init__(self, models):
-        self.models = self._remove_softmax_from(models)
+        self.models = models #self._remove_softmax_from(models)
         # Don't use test data information for training
         callbacks = []
         optimizer = optimizers.RMSprop()
@@ -164,8 +164,8 @@ def main():
         - The Relative Performance of Ensemble Methods with Deep Convolutional
         Neural Networks for Image Classification (https://arxiv.org/abs/1704.01664)
     '''
-    score_path_val = './predictions/' + MODEL_NAME + '_score_val.npy'
-    score_path_test = './predictions/' + MODEL_NAME + '_score_test.npy'
+    score_path_val = './predictions/' + MODEL_NAME + '_prob_val.npy'
+    score_path_test = './predictions/' + MODEL_NAME + '_prob_test.npy'
 
     if os.path.isfile(score_path_val):
         validation_data = (np.load(score_path_val), y_val)
