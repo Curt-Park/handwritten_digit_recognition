@@ -80,6 +80,7 @@ def majority_voting_ensemble(predictions):
 def super_learning(models, x):
     super_learner = SuperLearner(models)
     super_learner.load_weights(PATH + 'SuperLearner.h5')
+    x = super_learner.get_scores(x)
     return super_learner.predict(x)
 
 '''

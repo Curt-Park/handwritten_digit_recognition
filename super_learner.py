@@ -1,8 +1,7 @@
-from keras.callbacks import ReduceLROnPlateau
 from keras.layers import (Input, Conv1D, Activation, Flatten)
 from keras.models import Model
-from keras import regularizers
 from keras import optimizers
+from keras import initializers
 from base_model import BaseModel
 from vgg16 import VGG16
 from resnet164 import ResNet164
@@ -31,9 +30,8 @@ class SuperLearner(BaseModel):
     def __init__(self, models):
         self.models = self._remove_softmax_from(models)
         # Don't use test data information for training
-        callbacks = [ReduceLROnPlateau(monitor = 'loss', factor = 1/2,
-                                       patience = 50, verbose = 1)]
-        optimizer = optimizers.RMSprop() #optimizers.SGD(lr=1, momentum=0.9, decay=1e-04)
+        callbacks = []
+        optimizer = optimizers.RMSprop()
         BaseModel.__init__(self, model = self._build(), optimizer = optimizer,
                            callbacks = callbacks)
 
@@ -47,9 +45,9 @@ class SuperLearner(BaseModel):
         Returns:
             Probabilities for each label by weighted sum of all models' scores
         '''
-        reg = regularizers.l1(0.0001)
+        init = initializers.TruncatedNormal(mean = 1)
         x = Input(shape = (10, len(self.models)))
-        y = Conv1D(1, 1, kernel_regularizer = reg, bias_regularizer = reg)(x)
+        y = Conv1D(1, 1, kernel_initializer = init)(x)
         y = Flatten()(y)
         y = Activation('softmax')(y)
 
@@ -105,11 +103,11 @@ def get_argument_parser(model_name):
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs',
-                        help = 'How many epochs you need to run (default: 10)',
-                        type = int, default = 10)
+                        help = 'How many epochs you need to run (default: 100)',
+                        type = int, default = 100)
     parser.add_argument('--batch_size',
-                        help = 'The number of images in a batch (default: 64)',
-                        type = int, default = 64)
+                        help = 'The number of images in a batch (default: 32)',
+                        type = int, default = 32)
     parser.add_argument('--path_for_weights',
                         help = f'The path from where the weights will be saved or loaded \
                                 (default: {weights_path})',
