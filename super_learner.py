@@ -2,6 +2,7 @@ from keras.callbacks import ReduceLROnPlateau
 from keras.layers import (Input, Conv1D, Activation, Flatten)
 from keras.models import Model
 from keras.initializers import Constant
+from keras import regularizers
 from keras import optimizers
 from base_model import BaseModel
 from vgg16 import VGG16
@@ -11,6 +12,7 @@ from wide_resnet_28_10 import WideResNet28_10
 import numpy as np
 import argparse
 import utils
+import os
 
 MODEL_NAME = 'SuperLearner' # This should be modified when the model name changes.
 PATH = './models/'
@@ -30,12 +32,11 @@ class SuperLearner(BaseModel):
     def __init__(self, models):
         self.models = self._remove_softmax_from(models)
         callbacks = [ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1,
-                                       patience = 30, verbose = 1)]
-        optimizer = optimizers.SGD(lr=0.01, momentum=0.9, decay=1e-04)
+                                       patience = 20, verbose = 1)]
+        # optimizer = optimizers.SGD(lr=0.01, momentum=0.9, decay=1e-04)
+        optimizer = optimizers.Adam()
         BaseModel.__init__(self, model = self._build(), optimizer = optimizer,
                            callbacks = callbacks)
-        self.x_val = None
-        self.x_test = None
 
     def _build(self):
         '''
@@ -47,11 +48,9 @@ class SuperLearner(BaseModel):
         Returns:
             Probabilities for each label by weighted sum of all models' scores
         '''
-        # Same as Unweighted Average Method at the begining
-        init = Constant(value = 1/len(self.models))
-
+        reg = regularizers.l1(0.001)
         x = Input(shape = (10, len(self.models)))
-        y = Conv1D(1, 1, kernel_initializer = init)(x)
+        y = Conv1D(1, 1, kernel_regularizer = reg, bias_regularizer = reg)(x)
         y = Flatten()(y)
         y = Activation('softmax')(y)
 
@@ -79,7 +78,7 @@ class SuperLearner(BaseModel):
                                                 outputs = model.model.layers[-2].output))
         return models_without_softmax
 
-    def _get_scores(self, x):
+    def get_scores(self, x):
         '''
         Returns scores of all models w.r.t the input x.
         The output can be used as an input of SuperLearner.
@@ -92,54 +91,6 @@ class SuperLearner(BaseModel):
             scores.append(model.predict(x))
 
         return np.asarray(scores).transpose((1, 2, 0))
-
-    def fit(self, training_data, validation_data, epochs, batch_size):
-        '''
-        Training on the validation set. -
-
-        "Super Learner from convolution neural network perspective.
-        The base learners are trained in the training set,
-        and 1 by 1 convolutional layer is trained in the validation set."
-
-        "We compute the weights of Super Learner by minimizing the single-split
-        cross-validated loss."
-
-        "The Super Learner computes an honest ensemble weight based on the validation set."
-
-        From:
-            - The Relative Performance of Ensemble Methods with Deep Convolutional
-            Neural Networks for Image Classification (https://arxiv.org/abs/1704.01664)
-        '''
-        x_val, y_val = training_data
-        x_test, y_test = validation_data
-
-        # in order to save time
-        if self.x_val is None:
-            self.x_val = self._get_scores(x_val)
-        if self.x_test is None:
-            self.x_test = self._get_scores(x_test)
-
-        hist = self.model.fit(self.x_val, y_val, epochs = epochs,
-                              batch_size = batch_size,
-                              validation_data = (self.x_test, y_test),
-                              callbacks = self.callbacks)
-        return hist
-
-    def evaluate(self, eval_data, batch_size = 32):
-        x_test, y_test = eval_data
-
-        # in order to save time
-        if self.x_test is None:
-            self.x_test = self._get_scores(x_test)
-
-        loss_and_metrics = self.model.evaluate(self.x_test, y_test,
-                                               batch_size = batch_size)
-        return loss_and_metrics
-
-    def predict(self, x, batch_size = None, verbose = 1, steps = None):
-        x = self._get_scores(x)
-
-        return self.model.predict(x, batch_size, verbose, steps)
 
 def get_argument_parser(model_name):
     '''
@@ -181,7 +132,7 @@ def main():
     # load all arguments
     args = get_argument_parser(MODEL_NAME)
 
-    _, validation_data, test_data = utils.load_mnist()
+    _, (x_val, y_val), (x_test, y_test) = utils.load_mnist()
     print(f'[data loaded]')
 
     # build and compile the model
@@ -200,6 +151,43 @@ def main():
         print(f'[weights loaded from {args.path_for_weights}]')
 
     # train the model
+    '''
+    Training on the validation set. -
+
+    "Super Learner from convolution neural network perspective.
+    The base learners are trained in the training set,
+    and 1 by 1 convolutional layer is trained in the validation set."
+
+    "We compute the weights of Super Learner by minimizing the single-split
+    cross-validated loss."
+
+    "The Super Learner computes an honest ensemble weight based on the validation set."
+
+    From:
+        - The Relative Performance of Ensemble Methods with Deep Convolutional
+        Neural Networks for Image Classification (https://arxiv.org/abs/1704.01664)
+    '''
+    score_path_val = './predictions/' + MODEL_NAME + '_score_val.npy'
+    score_path_test = './predictions/' + MODEL_NAME + '_score_test.npy'
+
+    if os.path.isfile(score_path_val):
+        validation_data = (np.load(score_path_val), y_val) 
+        print('[Score file loaded for the validation set]')
+    else:
+        print('[No score file for the validation Set]')
+        validation_data = (super_learner.get_scores(x_val), y_val)
+        np.save(score_path_val, validation_data[0])
+        print('[Score file saved]')
+
+    if os.path.isfile(score_path_test):
+        print('[Score file loaded for the test set]')
+        test_data = (np.load(score_path_test), y_test) 
+    else:
+        print('[No score file for the test Set]')
+        test_data = (super_learner.get_scores(x_test), y_test)
+        np.save(score_path_test, test_data[0])
+        print('[Score file saved]')
+
     super_learner.fit(validation_data, test_data,
                       epochs = args.epochs, batch_size = args.batch_size)
     print('[trained on the validation set]')
