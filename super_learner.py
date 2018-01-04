@@ -24,7 +24,7 @@ class SuperLearner(BaseModel):
     '_build()' is only modified when the model changes.
 
     HowToUse:
-        model = SuperLearner()
+        model = SuperLearner(models_to_be_ensembled)
         * all funtionalities are written in BaseModel.py
     '''
     def __init__(self, models):
