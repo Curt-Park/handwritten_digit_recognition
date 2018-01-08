@@ -3,15 +3,15 @@
 This repository is for practice of implementing well-known network architectures and ensembling methods, including the followings:
 
 #### Architectures
-- Mobilenet
-- VGG16
-- Resnet164
-- WideResnet28-10
+- [Mobilenet](https://arxiv.org/abs/1704.04861) - [[structure]](images/MobileNet.png) [[training progress]](images/MobileNet_9968_plot.png)
+- [VGG16](https://arxiv.org/abs/1409.1556) - [[structure]](images/VGG16.png) [[training progress]](images/VGG16_9968_plot.png)
+- [Resnet164](https://arxiv.org/abs/1603.05027) - [[structure]](images/ResNet164.png) [[training progress]](images/ResNet164_9970_plot.png)
+- [WideResnet28-10](https://arxiv.org/abs/1603.05027) - [[structure]](images/WideResNet28_10.png) [[training progress]](images/WideResNet28_10_9976_plot.png)
 
 #### Ensembling methods
 - Unweighted average
 - Majority voting
-- Super Learner
+- [Super Learner](https://arxiv.org/abs/1704.01664) - [[structure]](images/SuperLearner.png)
 
 #### Others
 - Channel-wise normalization of input images: substracted by mean and divided by std
