@@ -119,7 +119,7 @@ optional arguments:
 └── super_learner.py
 ```
 
-## Reference
+## References
 #### Papers
 - [Very Deep Convolutional Networks for Large-Scale Image Recognition](https://arxiv.org/abs/1409.1556)
 - [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)
