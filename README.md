@@ -116,3 +116,23 @@ optional arguments:
 ├── wide_resnet_28_10.py
 └── super_learner.py
 ```
+
+## Reference
+#### Papers
+- [Very Deep Convolutional Networks for Large-Scale Image Recognition](https://arxiv.org/abs/1409.1556)
+- [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)
+- [Identity Mappings in Deep Residual Networks](https://arxiv.org/abs/1603.05027)
+- [Wide Residual Networks](https://arxiv.org/abs/1605.07146)
+- [The Relative Performance of Ensemble Methods with Deep Convolutional Neural Networks for Image Classification](https://arxiv.org/abs/1704.01664)
+
+#### Implementation
+- [ResNet Author's Implementation](https://github.com/KaimingHe/resnet-1k-layers/blob/master/resnet-pre-act.lua)
+- [WideResNet Author's implementation](https://github.com/szagoruyko/wide-residual-networks)
+- [MobileNet in Keras](https://github.com/keras-team/keras/blob/master/keras/applications/mobilenet.py)
+
+#### Others
+- [Global weight decay in keras? - Stackoverflow](https://stackoverflow.com/questions/41260042/global-weight-decay-in-keras)
+- [Best up to date result on MNIST dataset - Kaggle](https://www.kaggle.com/c/digit-recognizer/discussion/23999#138390)
+- [Batch Normalization before or after ReLU? - Reddit](https://www.reddit.com/r/MachineLearning/comments/67gonq/d_batch_normalization_before_or_after_relu/)
+- [Depth-wise Conv2D - Tensorflow Document](https://www.tensorflow.org/api_docs/python/tf/nn/depthwise_conv2d)
+- [A Complete Tutorial on Ridge and Lasso Regression in Python](https://www.analyticsvidhya.com/blog/2016/01/complete-tutorial-ridge-lasso-regression-python/)
