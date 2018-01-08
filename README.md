@@ -131,6 +131,7 @@ optional arguments:
 - [ResNet Author's Implementation](https://github.com/KaimingHe/resnet-1k-layers/blob/master/resnet-pre-act.lua)
 - [WideResNet Author's implementation](https://github.com/szagoruyko/wide-residual-networks)
 - [MobileNet in Keras](https://github.com/keras-team/keras/blob/master/keras/applications/mobilenet.py)
+- [How far can we go with MNIST??](https://github.com/hwalsuklee/how-far-can-we-go-with-MNIST)
 
 #### Others
 - [Global weight decay in keras? - Stackoverflow](https://stackoverflow.com/questions/41260042/global-weight-decay-in-keras)
