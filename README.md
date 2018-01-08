@@ -31,7 +31,9 @@ The best single model and the best ensemble method achieve **99.76%** and **99.7
 |  VGG16              |          99.61%             |       99.68%        |
 |  Resnet164          |        **99.72%**           |       99.70%        |
 |  WideResnet28-10    |        **99.72%**           |     **99.76%**      |
-|  **Ensemble**       |  **On the validation set**  | **On the test set** |
+
+|  **Ensemble (all)** |  **On the validation set**  | **On the test set** |
+|:-------------------:|:---------------------------:|:-------------------:|
 |  Unweighted average |          99.70%             |       99.75%        |
 |  Majority voting    |          99.71%             |       99.76%        |
 |  Super Learner      |        **99.73%**           |     **99.77%**      |
