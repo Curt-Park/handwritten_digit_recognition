@@ -64,9 +64,11 @@ def get_train_generator(x_train, y_train, batch_size = 32):
         Instance of ImageDataGenerator
         (See: https://keras.io/preprocessing/image/ )
     '''
-    train_datagen = ImageDataGenerator(width_shift_range = 0.1,
-                                       height_shift_range = 0.1,
-                                       zoom_range = 0.1)
+    train_datagen = ImageDataGenerator(width_shift_range=0.1,
+                                       height_shift_range=0.1,
+                                       horizontal_flip=True,
+                                       shear_range=0.2,
+                                       zoom_range=0.1)
 
     return train_datagen.flow(x_train, y_train, batch_size = batch_size)
 
