@@ -14,7 +14,7 @@ class MobileNet(BaseModel):
     '''
     1. ZeroPadding2D (2, 2)
     2. 3X3 Conv2D 32
-    3. Densewise separable convolution block X 13
+    3. Depthwise separable convolution block X 13
     4. GlobalAveragePooling2D
     5. FC 10 + Softmax
 
@@ -57,25 +57,25 @@ class MobileNet(BaseModel):
         y = Conv2D(int(32 * alpha), (3, 3), padding = 'same')(y) # strides = (2, 2) in the paper
         y = BatchNormalization()(y)
         y = Activation('relu')(y)
-        y = self._densewise_sep_conv(y, 64, alpha) # spatial size: 32 x 32
-        y = self._densewise_sep_conv(y, 128, alpha, strides = (2, 2)) # spatial size: 32 x 32
-        y = self._densewise_sep_conv(y, 128, alpha) # spatial size: 16 x 16
-        y = self._densewise_sep_conv(y, 256, alpha, strides = (2, 2)) # spatial size: 8 x 8
-        y = self._densewise_sep_conv(y, 256, alpha) # spatial size: 8 x 8
-        y = self._densewise_sep_conv(y, 512, alpha, strides = (2, 2)) # spatial size: 4 x 4
+        y = self._depthwise_sep_conv(y, 64, alpha) # spatial size: 32 x 32
+        y = self._depthwise_sep_conv(y, 128, alpha, strides = (2, 2)) # spatial size: 32 x 32
+        y = self._depthwise_sep_conv(y, 128, alpha) # spatial size: 16 x 16
+        y = self._depthwise_sep_conv(y, 256, alpha, strides = (2, 2)) # spatial size: 8 x 8
+        y = self._depthwise_sep_conv(y, 256, alpha) # spatial size: 8 x 8
+        y = self._depthwise_sep_conv(y, 512, alpha, strides = (2, 2)) # spatial size: 4 x 4
         for _ in range(5):
-            y = self._densewise_sep_conv(y, 512, alpha) # spatial size: 4 x 4
-        y = self._densewise_sep_conv(y, 1024, alpha, strides = (2, 2)) # spatial size: 2 x 2
-        y = self._densewise_sep_conv(y, 1024, alpha) # strides = (2, 2) in the paper
+            y = self._depthwise_sep_conv(y, 512, alpha) # spatial size: 4 x 4
+        y = self._depthwise_sep_conv(y, 1024, alpha, strides = (2, 2)) # spatial size: 2 x 2
+        y = self._depthwise_sep_conv(y, 1024, alpha) # strides = (2, 2) in the paper
         y = GlobalAveragePooling2D()(y)
         y = Dense(units = 10)(y)
         y = Activation('softmax')(y)
 
         return Model(x, y, name = MODEL_NAME)
 
-    def _densewise_sep_conv(self, x, filters, alpha, strides = (1, 1)):
+    def _depthwise_sep_conv(self, x, filters, alpha, strides = (1, 1)):
         '''
-        Creates a densewise separable convolution block
+        Creates a depthwise separable convolution block
 
         Args:
             x - input
@@ -84,7 +84,7 @@ class MobileNet(BaseModel):
             strides - the stride length of the convolution
 
         Returns:
-            A densewise separable convolution block
+            A depthwise separable convolution block
         '''
         y = DepthwiseConv2D((3, 3), padding = 'same', strides = strides)(x)
         y = BatchNormalization()(y)
